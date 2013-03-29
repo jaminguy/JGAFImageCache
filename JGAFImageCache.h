@@ -1,6 +1,6 @@
 //
-//  JGUYImageCache.h
-//  ImageCache
+//  JGAFImageCache.h
+//  JGAFImageCache
 //
 //  Created by Jamin Guy on 3/28/13.
 //  Copyright (c) 2013 Jamin Guy. All rights reserved.
@@ -10,7 +10,10 @@
 
 @interface JGAFImageCache : NSObject
 
-//default is 7 days
+// When the app enters the background extra time will be requested within which to
+// delete files from disk that are older than this number in seconds.
+// Default is 7 days: -604800
+#define JGAFImageCache_DEFAULT_EXPIRATION_INTERVAL -604800
 @property (assign, nonatomic) NSTimeInterval fileExpirationInterval;
 
 + (JGAFImageCache *)sharedInstance;

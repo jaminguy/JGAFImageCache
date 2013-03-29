@@ -1,6 +1,6 @@
 //
-//  JGUYImageCache.m
-//  ImageCache
+//  JGAFImageCache.m
+//  JGAFImageCache
 //
 //  Created by Jamin Guy on 3/28/13.
 //  Copyright (c) 2013 Jamin Guy. All rights reserved.
@@ -39,7 +39,7 @@
     self = [super init];
     if(self) {
         //default 7 days
-        _fileExpirationInterval = -604800;
+        _fileExpirationInterval = JGAFImageCache_DEFAULT_EXPIRATION_INTERVAL;
         _imageCache = [[NSCache alloc] init];
         _httpClientCache = [[NSCache alloc] init];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
@@ -122,6 +122,9 @@
         if(httpClient == nil) {
             httpClient = [[AFHTTPClient alloc] initWithBaseURL:[NSURL URLWithString:baseURL]];
             [_httpClientCache setObject:httpClient forKey:key];
+//#if JGAFImageCache_LOGGING_ENABLED
+            NSLog(@"%s [line %d] AFHTTPClient initWithBaseURL:%@", __PRETTY_FUNCTION__, __LINE__, baseURL);
+//#endif
         }
     }
     return httpClient;

@@ -1,6 +1,6 @@
 //
 //  NSString+JGAFSHA1.h
-//  ImageCache
+//  JGAFImageCache
 //
 //  Created by Jamin Guy on 3/28/13.
 //  Copyright (c) 2013 Jamin Guy. All rights reserved.
