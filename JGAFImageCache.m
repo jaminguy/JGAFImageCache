@@ -14,7 +14,7 @@
 #import "NSString+JGAFSHA1.h"
 
 #ifndef JGAFImageCache_LOGGING_ENABLED
-#define JGAFImageCache_LOGGING_ENABLED 1
+#define JGAFImageCache_LOGGING_ENABLED 0
 #endif
 
 @interface JGAFImageCache ()
