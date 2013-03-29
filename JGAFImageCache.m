@@ -13,6 +13,10 @@
 #import "AFNetworking.h"
 #import "NSString+JGAFSHA1.h"
 
+#ifndef JGAFImageCache_LOGGING_ENABLED
+#define JGAFImageCache_LOGGING_ENABLED 1
+#endif
+
 @interface JGAFImageCache ()
 
 @property (strong, nonatomic) NSCache *imageCache;
@@ -102,7 +106,9 @@
         }
     }
     @catch(NSException *exception) {
+#if JGAFImageCache_LOGGING_ENABLED
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
+#endif
         image = nil;
     }
     return image;
@@ -126,7 +132,7 @@
     NSString *baseURL = [NSString stringWithFormat:@"%@://%@", imageURL.scheme, imageURL.host];
     NSString *imagePath = nil;
     if(imageURL.path.length) {
-        imagePath = imageURL.path;
+        imagePath = [JGAFImageCache stringByEscapingForURLPath:imageURL.path];
     }
     
     if(imageURL.query.length) {
@@ -150,7 +156,9 @@
                      image = [[UIImage alloc] initWithData:responseObject];
                  }
                  @catch(NSException *exception) {
+#if JGAFImageCache_LOGGING_ENABLED
                      NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
+#endif
                      image = nil;
                  }
              }
@@ -169,7 +177,9 @@
          });
      }
      failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+#if JGAFImageCache_LOGGING_ENABLED
          NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
+#endif
          if(completion) {
              completion(nil);
          }
@@ -212,7 +222,9 @@
         [[JGAFImageCache sharedFileManager] createFileAtPath:filePath contents:imageData attributes:nil];
     }
     @catch(NSException *exception) {
+#if JGAFImageCache_LOGGING_ENABLED
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
+#endif
     }
 }
 
@@ -230,11 +242,24 @@
                 [fileManager removeItemAtPath:filepath error:&error];
             }
         }
-        
+#if JGAFImageCache_LOGGING_ENABLED
         if(error != nil) {
             NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
         }
+#endif
     }
+}
+
++ (NSString*)stringByEscapingForURLPath:(NSString *)path {
+    // Encode all the reserved characters, per RFC 3986
+    // (<http://www.ietf.org/rfc/rfc3986.txt>)
+    CFStringRef escaped =
+    CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+                                            (CFStringRef)path,
+                                            NULL,
+                                            (CFStringRef)@"!*'();:@&=+$,?%#[] ",
+                                            kCFStringEncodingUTF8);
+    return (__bridge_transfer NSString *)escaped;
 }
 
 @end
