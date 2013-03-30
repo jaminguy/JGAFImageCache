@@ -55,7 +55,7 @@
     if(backgroundTaskIdentifier != UIBackgroundTaskInvalid) {
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
             NSDate *maxAge = [NSDate dateWithTimeIntervalSinceNow:_fileExpirationInterval];
-            [JGAFImageCache removeAllFilesOlderThanDate:maxAge];
+            [[self class] removeAllFilesOlderThanDate:maxAge];
             [[UIApplication sharedApplication] endBackgroundTask:backgroundTaskIdentifier];
         });
     }
@@ -86,8 +86,8 @@
 - (UIImage *)imageFromDiskForKey:(NSString *)key {
     UIImage *image = nil;
     @try {
-        NSString *filePath = [JGAFImageCache filePathForKey:key];
-        NSFileManager *fileManager = [JGAFImageCache sharedFileManager];
+        NSString *filePath = [[self class] filePathForKey:key];
+        NSFileManager *fileManager = [[self class] sharedFileManager];
         if([fileManager fileExistsAtPath:filePath]) {
             NSData *imageData = [fileManager contentsAtPath:filePath];
             if(imageData) {
@@ -129,7 +129,7 @@
     NSString *baseURL = [NSString stringWithFormat:@"%@://%@", imageURL.scheme, imageURL.host];
     NSString *imagePath = nil;
     if(imageURL.path.length) {
-        imagePath = [JGAFImageCache stringByEscapingForURLPath:imageURL.path];
+        imagePath = [[self class] stringByEscapingForURLPath:imageURL.path];
     }
     
     if(imageURL.query.length) {
@@ -161,7 +161,7 @@
              }
              
              if(image) {
-                 [JGAFImageCache saveImageToDiskForKey:image key:key];
+                 [[self class] saveImageToDiskForKey:image key:key];
                  [_imageCache setObject:image forKey:key];
                  
              }
@@ -200,7 +200,7 @@
     dispatch_once(&onceToken, ^{
         NSArray *caches = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
         cacheDirectoryPath = [[[caches objectAtIndex:0] stringByAppendingPathComponent:@"JGAFImageCache"] copy];
-        NSFileManager *fileManager = [JGAFImageCache sharedFileManager];
+        NSFileManager *fileManager = [self sharedFileManager];
         if([fileManager fileExistsAtPath:cacheDirectoryPath isDirectory:NULL] == NO) {
             [fileManager createDirectoryAtPath:cacheDirectoryPath withIntermediateDirectories:YES attributes:nil error:NULL];
         }
@@ -209,14 +209,14 @@
 }
 
 + (NSString *)filePathForKey:(NSString *)key {
-    return [[JGAFImageCache cacheDirectoryPath] stringByAppendingPathComponent:key];
+    return [[self cacheDirectoryPath] stringByAppendingPathComponent:key];
 }
 
 + (void)saveImageToDiskForKey:(UIImage *)image key:(NSString *)key {
     @try {
-        NSString *filePath = [JGAFImageCache filePathForKey:key];
+        NSString *filePath = [self filePathForKey:key];
         NSData *imageData = UIImagePNGRepresentation(image);
-        [[JGAFImageCache sharedFileManager] createFileAtPath:filePath contents:imageData attributes:nil];
+        [[self sharedFileManager] createFileAtPath:filePath contents:imageData attributes:nil];
     }
     @catch(NSException *exception) {
 #if JGAFImageCache_LOGGING_ENABLED
@@ -226,8 +226,8 @@
 }
 
 + (void)removeAllFilesOlderThanDate:(NSDate *)date {
-    NSFileManager *fileManager = [JGAFImageCache sharedFileManager];
-    NSString *cachePath = [JGAFImageCache cacheDirectoryPath];
+    NSFileManager *fileManager = [self sharedFileManager];
+    NSString *cachePath = [self cacheDirectoryPath];
     NSDirectoryEnumerator *directoryEnumerator = [fileManager enumeratorAtPath:cachePath];
     NSString *file;
     while (file = [directoryEnumerator nextObject]) {
