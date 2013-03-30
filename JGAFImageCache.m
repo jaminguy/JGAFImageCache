@@ -127,20 +127,7 @@
 - (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key completion:(void (^)(UIImage *image))completion {
     NSURL *imageURL = [NSURL URLWithString:url];
     NSString *baseURL = [NSString stringWithFormat:@"%@://%@", imageURL.scheme, imageURL.host];
-    NSString *imagePath = nil;
-    if(imageURL.path.length) {
-        imagePath = [[self class] stringByEscapingForURLPath:imageURL.path];
-    }
-    
-    if(imageURL.query.length) {
-        imagePath = [imagePath stringByAppendingFormat:@"?%@", imageURL.query];
-    }
-    
-    if(imageURL.fragment.length) {
-        imagePath = [imagePath stringByAppendingFormat:@"#%@", imageURL.fragment];
-    }
-    
-    
+    NSString *imagePath = [[self class] escapedPathForURL:imageURL];    
     AFHTTPClient *httpClient = [self httpClientForBaseURL:baseURL];
     [httpClient
      getPath:imagePath
@@ -184,6 +171,8 @@
 }
 
 #pragma mark - Class Methods
+
+# pragma mark - Files
 
 + (NSFileManager *)sharedFileManager {
     static id sharedFileManagerID;
@@ -245,6 +234,25 @@
         }
 #endif
     }
+}
+
+#pragma mark - Internet
+
++ (NSString *)escapedPathForURL:(NSURL *)url {
+    NSString *escapedPath = @"";
+    if(url.path.length) {
+        escapedPath = [self stringByEscapingForURLPath:url.path];
+    }
+    
+    if(url.query.length) {
+        escapedPath = [escapedPath stringByAppendingFormat:@"?%@", url.query];
+    }
+    
+    if(url.fragment.length) {
+        escapedPath = [escapedPath stringByAppendingFormat:@"#%@", url.fragment];
+    }
+    
+    return escapedPath.length > 0 ? escapedPath : nil;
 }
 
 + (NSString *)stringByEscapingForURLPath:(NSString *)path {
