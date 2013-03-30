@@ -97,12 +97,9 @@
                     [_imageCache setObject:image forKey:key];
                 }
             }
-            
         }
     }
-    @catch(NSException *exception) {
-        image = nil;
-        
+    @catch(NSException *exception) {        
 #if JGAFImageCache_LOGGING_ENABLED
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
