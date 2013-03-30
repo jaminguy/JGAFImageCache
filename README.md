@@ -4,7 +4,7 @@ JGAFImageCache (v0.1 Alpha: use at your own risk)
 
 A fast reliable image cache for iOS built with AFNetworking.
 <br>
- 1. Asynchronously loads from the fastest available source: NSCache, disk, or internet.
+ 1. Asynchronously loads from the fastest available source: NSCache, disk, or internet
  2. Creates SHA1 hash of the url to use as the key
  3. Always calls completion blocks on the main queue
  4. Automatically removes old images in the background
