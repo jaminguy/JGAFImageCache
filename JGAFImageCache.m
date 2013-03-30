@@ -13,10 +13,6 @@
 #import "AFNetworking.h"
 #import "NSString+JGAFSHA1.h"
 
-#ifndef JGAFImageCache_LOGGING_ENABLED
-#define JGAFImageCache_LOGGING_ENABLED 0
-#endif
-
 @interface JGAFImageCache ()
 
 @property (strong, nonatomic) NSCache *imageCache;
@@ -38,7 +34,6 @@
 - (id)init {
     self = [super init];
     if(self) {
-        //default 7 days
         _fileExpirationInterval = JGAFImageCache_DEFAULT_EXPIRATION_INTERVAL;
         _imageCache = [[NSCache alloc] init];
         _httpClientCache = [[NSCache alloc] init];
@@ -106,10 +101,11 @@
         }
     }
     @catch(NSException *exception) {
+        image = nil;
+        
 #if JGAFImageCache_LOGGING_ENABLED
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
-        image = nil;
     }
     return image;
 }
@@ -122,9 +118,10 @@
         if(httpClient == nil) {
             httpClient = [[AFHTTPClient alloc] initWithBaseURL:[NSURL URLWithString:baseURL]];
             [_httpClientCache setObject:httpClient forKey:key];
-//#if JGAFImageCache_LOGGING_ENABLED
+            
+#if JGAFImageCache_LOGGING_ENABLED
             NSLog(@"%s [line %d] AFHTTPClient initWithBaseURL:%@", __PRETTY_FUNCTION__, __LINE__, baseURL);
-//#endif
+#endif
         }
     }
     return httpClient;
@@ -253,7 +250,7 @@
     }
 }
 
-+ (NSString*)stringByEscapingForURLPath:(NSString *)path {
++ (NSString *)stringByEscapingForURLPath:(NSString *)path {
     // Encode all the reserved characters, per RFC 3986
     // (<http://www.ietf.org/rfc/rfc3986.txt>)
     CFStringRef escaped =

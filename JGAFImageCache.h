@@ -10,6 +10,10 @@
 
 @interface JGAFImageCache : NSObject
 
+#ifndef JGAFImageCache_LOGGING_ENABLED
+#define JGAFImageCache_LOGGING_ENABLED 0
+#endif
+
 // When the app enters the background extra time will be requested within which to
 // delete files from disk that are older than this number in seconds.
 // Default is 7 days: -604800
