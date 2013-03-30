@@ -70,15 +70,13 @@
             image = [weakSelf imageFromDiskForKey:sha1];
         }
         
-        if(image) {
-            if(completion) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    completion(image);
-                });
-            }
-        }
-        else {
+        if(image == nil) {
             [weakSelf loadRemoteImageForURL:url key:sha1 completion:completion];
+        }
+        else if(completion) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(image);
+            });
         }
     });
 }
@@ -143,7 +141,6 @@
 #if JGAFImageCache_LOGGING_ENABLED
                      NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
-                     image = nil;
                  }
              }
              
@@ -161,12 +158,13 @@
          });
      }
      failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-#if JGAFImageCache_LOGGING_ENABLED
-         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
-#endif
          if(completion) {
              completion(nil);
          }
+         
+#if JGAFImageCache_LOGGING_ENABLED
+         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
+#endif
      }];
 }
 
