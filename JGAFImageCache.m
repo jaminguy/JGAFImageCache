@@ -239,7 +239,7 @@
 + (NSString *)escapedPathForURL:(NSURL *)url {
     NSString *escapedPath = @"";
     if(url.path.length) {
-        escapedPath = [self stringByEscapingForURLPath:url.path];
+        escapedPath = [self stringByEscapingSpaces:url.path];
     }
     
     if(url.query.length) {
@@ -253,14 +253,13 @@
     return escapedPath.length > 0 ? escapedPath : nil;
 }
 
-+ (NSString *)stringByEscapingForURLPath:(NSString *)path {
-    // Encode all the reserved characters, per RFC 3986
++ (NSString *)stringByEscapingSpaces:(NSString *)string {
     // (<http://www.ietf.org/rfc/rfc3986.txt>)
     CFStringRef escaped =
     CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
-                                            (CFStringRef)path,
+                                            (CFStringRef)string,
                                             NULL,
-                                            (CFStringRef)@"!*'();:@&=+$,?%#[] ",
+                                            (CFStringRef)@" ",
                                             kCFStringEncodingUTF8);
     return (__bridge_transfer NSString *)escaped;
 }
