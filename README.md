@@ -1,4 +1,4 @@
-JGAFImageCache (v0.1 Alpha: use at your own risk)
+JGAFImageCache (v1.0 Beta)
 ==============
 
 
