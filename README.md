@@ -1,4 +1,4 @@
-JGAFImageCache (v1.0.0. Beta.)
+JGAFImageCache (v1.0.1 Beta.)
 ==============
 
 A fast reliable image cache for iOS built with AFNetworking.
@@ -12,3 +12,7 @@ A fast reliable image cache for iOS built with AFNetworking.
 You must include <a href=https://github.com/AFNetworking/AFNetworking>AFNetworking</a> in your project.
 
 `$ git submodule add https://github.com/AFNetworking/AFNetworking.git`
+
+Version Info:
+v1.0.1
+  - Add retry logic.
