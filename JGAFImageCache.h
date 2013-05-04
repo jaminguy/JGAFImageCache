@@ -20,6 +20,13 @@
 #define JGAFImageCache_DEFAULT_EXPIRATION_INTERVAL -604800
 @property (assign, nonatomic) NSTimeInterval fileExpirationInterval;
 
+// If the http response status code is not in the 400-499 range a retry can be initiated
+// Default: 0
+@property (assign, nonatomic) NSInteger maxNumberOfRetries;
+// Number of seconds to wait between retries
+// Default 0.0
+@property (assign, nonatomic) NSTimeInterval retryDelay;
+
 + (JGAFImageCache *)sharedInstance;
 - (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion;
 

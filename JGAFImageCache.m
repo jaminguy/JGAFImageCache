@@ -37,6 +37,8 @@
         _fileExpirationInterval = JGAFImageCache_DEFAULT_EXPIRATION_INTERVAL;
         _imageCache = [[NSCache alloc] init];
         _httpClientCache = [[NSCache alloc] init];
+        _maxNumberOfRetries = 0;
+        _retryDelay = 0.0;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
     }
     return self;
@@ -71,7 +73,7 @@
         }
         
         if(image == nil) {
-            [weakSelf loadRemoteImageForURL:url key:sha1 completion:completion];
+            [weakSelf loadRemoteImageForURL:url key:sha1 retryCount:0 completion:completion];
         }
         else if(completion) {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -122,10 +124,10 @@
     return httpClient;
 }
 
-- (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key completion:(void (^)(UIImage *image))completion {
+- (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key retryCount:(NSInteger)retryCount completion:(void (^)(UIImage *image))completion {
     NSURL *imageURL = [NSURL URLWithString:url];
     NSString *baseURL = [NSString stringWithFormat:@"%@://%@", imageURL.scheme, imageURL.host];
-    NSString *imagePath = [[self class] escapedPathForURL:imageURL];    
+    NSString *imagePath = [[self class] escapedPathForURL:imageURL];
     AFHTTPClient *httpClient = [self httpClientForBaseURL:baseURL];
     [httpClient
      getPath:imagePath
@@ -158,12 +160,29 @@
          });
      }
      failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-         if(completion) {
-             completion(nil);
+         NSInteger statusCode = operation.response.statusCode;
+         if((retryCount >= self.maxNumberOfRetries) || (statusCode >= 400 && statusCode <= 499)) {
+             //out of retries or got a 400 level error so don't retry
+             if(completion) {
+                 completion(nil);
+             }
+         }
+         else {
+             // try again
+             NSInteger nextRetryCount = retryCount + 1;
+             double delayInSeconds = self.retryDelay;
+             dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+             dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+                 [self loadRemoteImageForURL:url key:key retryCount:nextRetryCount completion:completion];
+             });
+             
+#if JGAFImageCache_LOGGING_ENABLED
+             NSLog(@"%s [Line %d] retrying(%d)", __PRETTY_FUNCTION__, __LINE__, nextRetryCount);
+#endif
          }
          
 #if JGAFImageCache_LOGGING_ENABLED
-         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
+         NSLog(@"%s [Line %d] statusCode(%d) %@", __PRETTY_FUNCTION__, __LINE__, statusCode, error);
 #endif
      }];
 }
