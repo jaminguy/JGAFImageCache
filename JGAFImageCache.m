@@ -218,17 +218,48 @@
     return [[self cacheDirectoryPath] stringByAppendingPathComponent:key];
 }
 
++ (NSOperationQueue *)saveOperationQueue {
+    static NSOperationQueue *operationQueue;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        operationQueue = [[NSOperationQueue alloc] init];
+        operationQueue.maxConcurrentOperationCount = 1;
+    });
+    return operationQueue;
+}
+
 + (void)saveImageToDiskForKey:(UIImage *)image key:(NSString *)key {
-    @try {
-        NSString *filePath = [self filePathForKey:key];
-        NSData *imageData = UIImagePNGRepresentation(image);
-        [[self sharedFileManager] createFileAtPath:filePath contents:imageData attributes:nil];
-    }
-    @catch(NSException *exception) {
+    [[[self class] saveOperationQueue] addOperationWithBlock:^{
+        @try {
+            NSString *filePath = [self filePathForKey:key];
+            NSData *imageData = UIImagePNGRepresentation(image);
+            if(imageData.length < [[self class] freeDiskSpace]) {
+                [[self sharedFileManager] createFileAtPath:filePath contents:imageData attributes:nil];
+            }
+        }
+        @catch(NSException *exception) {
 #if JGAFImageCache_LOGGING_ENABLED
-        NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
+            NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
+        }
+    }];
+}
+
++ (unsigned long long)freeDiskSpace {
+    unsigned long long totalFreeSpace = 0;
+    NSError *error = nil;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSDictionary *dictionary = [[[self class] sharedFileManager] attributesOfFileSystemForPath:[paths lastObject] error: &error];
+    if (dictionary) {
+        NSNumber *freeFileSystemSizeInBytes = [dictionary objectForKey:NSFileSystemFreeSize];
+        totalFreeSpace = [freeFileSystemSizeInBytes unsignedLongLongValue];
     }
+#if JGAFImageCache_LOGGING_ENABLED
+    else if(error) {
+        NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
+    }
+#endif
+    return totalFreeSpace;
 }
 
 + (void)removeAllFilesOlderThanDate:(NSDate *)date {
