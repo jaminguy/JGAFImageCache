@@ -29,5 +29,6 @@
 
 + (JGAFImageCache *)sharedInstance;
 - (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion;
+- (void)clearAllData;
 
 @end

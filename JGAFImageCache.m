@@ -187,6 +187,22 @@
      }];
 }
 
+- (void)clearAllData {
+    [self.imageCache removeAllObjects];
+    
+    UIBackgroundTaskIdentifier backgroundTaskIdentifier = UIBackgroundTaskInvalid;
+    backgroundTaskIdentifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [[UIApplication sharedApplication] endBackgroundTask:backgroundTaskIdentifier];
+    }];
+    
+    if(backgroundTaskIdentifier != UIBackgroundTaskInvalid) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [[self class] removeAllFilesOlderThanDate:[NSDate date]];
+            [[UIApplication sharedApplication] endBackgroundTask:backgroundTaskIdentifier];
+        });
+    }
+}
+
 #pragma mark - Class Methods
 
 # pragma mark - Files
