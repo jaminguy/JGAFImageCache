@@ -1,4 +1,4 @@
-JGAFImageCache (v1.0.2 Beta)
+JGAFImageCache (v1.1.0)
 ==============
 
 A fast reliable image cache for iOS built with AFNetworking.
@@ -20,3 +20,6 @@ v1.0.2
 
 v1.0.1
   - Add retry logic.
+
+v1.1.0
+ - Add clearAllData method.
