@@ -28,7 +28,13 @@
 @property (assign, nonatomic) NSTimeInterval retryDelay;
 
 + (JGAFImageCache *)sharedInstance;
+
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
 - (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion;
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+- (void)imageForURL:(NSString *)url completion:(void (^)(NSImage *image))completion;
+#endif
+
 - (void)clearAllData;
 
 @end

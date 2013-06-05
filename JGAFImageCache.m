@@ -8,7 +8,11 @@
 
 #import "JGAFImageCache.h"
 
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
 #import <UIKit/UIKit.h>
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+#import "NSImage+JGAFPNGRepresentation.h"
+#endif
 
 #import "AFNetworking.h"
 #import "NSString+JGAFSHA1.h"
@@ -39,7 +43,9 @@
         _httpClientCache = [[NSCache alloc] init];
         _maxNumberOfRetries = 0;
         _retryDelay = 0.0;
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+#endif
     }
     return self;
 }
@@ -48,6 +54,7 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
 - (void)applicationDidEnterBackground:(NSNotification *)notification {
     UIBackgroundTaskIdentifier backgroundTaskIdentifier = UIBackgroundTaskInvalid;
     backgroundTaskIdentifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
@@ -62,12 +69,21 @@
         });
     }
 }
+#endif
 
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
 - (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion {
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+- (void)imageForURL:(NSString *)url completion:(void (^)(NSImage *image))completion {
+#endif
     __weak JGAFImageCache *weakSelf = self;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSString *sha1 = [url jgaf_sha1];
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
         UIImage *image = [_imageCache objectForKey:sha1];
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+        NSImage *image = [_imageCache objectForKey:sha1];
+#endif
         if(image == nil) {
             image = [weakSelf imageFromDiskForKey:sha1];
         }
@@ -83,8 +99,12 @@
     });
 }
 
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
 - (UIImage *)imageFromDiskForKey:(NSString *)key {
-    UIImage *image = nil;
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+- (NSImage *)imageFromDiskForKey:(NSString *)key {
+#endif
+    id image = nil;
     @try {
         NSString *filePath = [[self class] filePathForKey:key];
         NSFileManager *fileManager = [[self class] sharedFileManager];
@@ -92,7 +112,11 @@
             NSData *imageData = [fileManager contentsAtPath:filePath];
             if(imageData) {
                 [fileManager setAttributes:@{NSFileModificationDate:[NSDate date]} ofItemAtPath:filePath error:NULL];
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
                 image = [[UIImage alloc] initWithData:imageData];
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+                image = [[NSImage alloc] initWithData:imageData];
+#endif
                 if (image) {
                     [_imageCache setObject:image forKey:key];
                 }
@@ -124,7 +148,11 @@
     return httpClient;
 }
 
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
 - (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key retryCount:(NSInteger)retryCount completion:(void (^)(UIImage *image))completion {
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+- (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key retryCount:(NSInteger)retryCount completion:(void (^)(NSImage *image))completion {
+#endif
     NSURL *imageURL = [NSURL URLWithString:url];
     NSString *baseURL = [NSString stringWithFormat:@"%@://%@", imageURL.scheme, imageURL.host];
     NSString *imagePath = [[self class] escapedPathForURL:imageURL];
@@ -134,10 +162,14 @@
      parameters:nil
      success:^(AFHTTPRequestOperation *operation, id responseObject) {
          dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-             UIImage *image = nil;
+             id image = nil;
              if(responseObject) {
                  @try {
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
                      image = [[UIImage alloc] initWithData:responseObject];
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+                     image = [[NSImage alloc] initWithData:responseObject];
+#endif
                  }
                  @catch(NSException *exception) {
 #if JGAFImageCache_LOGGING_ENABLED
@@ -190,6 +222,7 @@
 - (void)clearAllData {
     [self.imageCache removeAllObjects];
     
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
     UIBackgroundTaskIdentifier backgroundTaskIdentifier = UIBackgroundTaskInvalid;
     backgroundTaskIdentifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
         [[UIApplication sharedApplication] endBackgroundTask:backgroundTaskIdentifier];
@@ -201,6 +234,11 @@
             [[UIApplication sharedApplication] endBackgroundTask:backgroundTaskIdentifier];
         });
     }
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [[self class] removeAllFilesOlderThanDate:[NSDate date]];
+    });
+#endif
 }
 
 #pragma mark - Class Methods
@@ -244,11 +282,15 @@
     return operationQueue;
 }
 
-+ (void)saveImageToDiskForKey:(UIImage *)image key:(NSString *)key {
++ (void)saveImageToDiskForKey:(id)image key:(NSString *)key {
     [[[self class] saveOperationQueue] addOperationWithBlock:^{
         @try {
             NSString *filePath = [self filePathForKey:key];
+#if defined(__IPHONE_OS_VERSION_MIN_REQUIRED)
             NSData *imageData = UIImagePNGRepresentation(image);
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+            NSData *imageData = [((NSImage *)image) jgaf_pngRepresentation];
+#endif
             if(imageData.length < [[self class] freeDiskSpace]) {
                 [[self sharedFileManager] createFileAtPath:filePath contents:imageData attributes:nil];
             }
