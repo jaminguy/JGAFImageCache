@@ -18,7 +18,7 @@ Version Info:
 
 1.1.1
  - Add CC_LONG cast for 64 bit compatibility.
- - Update cocoapods to use version 1.3.3 of AFNetworking.
+ - Update podspec to use version 1.3.3 of AFNetworking.
 
 1.1.0
  - Add clearAllData method.
