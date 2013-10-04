@@ -1,4 +1,4 @@
-JGAFImageCache (v1.1.0)
+JGAFImageCache (v1.1.1)
 ==============
 
 A fast reliable image cache for iOS built with AFNetworking.
@@ -15,6 +15,10 @@ You must include <a href=https://github.com/AFNetworking/AFNetworking>AFNetworki
 
 <br>
 Version Info:
+
+1.1.1
+ - Add CC_LONG cast for 64 bit compatibility.
+ - Update podspec to use version 1.3.3 of AFNetworking.
 
 1.1.0
  - Add clearAllData method.
