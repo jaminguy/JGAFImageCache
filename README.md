@@ -17,7 +17,7 @@ You must include <a href=https://github.com/AFNetworking/AFNetworking>AFNetworki
 Version Info:
 
 1.1.1
- - Add CCLONG cast for 64 bit compatibility.
+ - Add CC_LONG cast for 64 bit compatibility.
  - Update cocoapods to use version 1.3.3 of AFNetworking.
 
 1.1.0
