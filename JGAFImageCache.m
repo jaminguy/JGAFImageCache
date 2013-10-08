@@ -55,8 +55,9 @@
     }];
     
     if(backgroundTaskIdentifier != UIBackgroundTaskInvalid) {
+        __weak JGAFImageCache *weakSelf = self;
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            NSDate *maxAge = [NSDate dateWithTimeIntervalSinceNow:_fileExpirationInterval];
+            NSDate *maxAge = [NSDate dateWithTimeIntervalSinceNow:weakSelf.fileExpirationInterval];
             [[self class] removeAllFilesOlderThanDate:maxAge];
             [[UIApplication sharedApplication] endBackgroundTask:backgroundTaskIdentifier];
         });
@@ -67,7 +68,7 @@
     __weak JGAFImageCache *weakSelf = self;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSString *sha1 = [url jgaf_sha1];
-        UIImage *image = [_imageCache objectForKey:sha1];
+        UIImage *image = [weakSelf.imageCache objectForKey:sha1];
         if(image == nil) {
             image = [weakSelf imageFromDiskForKey:sha1];
         }
@@ -133,6 +134,7 @@
      getPath:imagePath
      parameters:nil
      success:^(AFHTTPRequestOperation *operation, id responseObject) {
+         __weak JGAFImageCache *weakSelf = self;
          dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
              UIImage *image = nil;
              if(responseObject) {
@@ -148,7 +150,7 @@
              
              if(image) {
                  [[self class] saveImageToDiskForKey:image key:key];
-                 [_imageCache setObject:image forKey:key];
+                 [weakSelf.imageCache setObject:image forKey:key];
                  
              }
              
