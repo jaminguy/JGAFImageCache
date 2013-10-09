@@ -1,4 +1,4 @@
-JGAFImageCache (v1.1.1)
+JGAFImageCache (v1.1.2)
 ==============
 
 A fast reliable image cache for iOS built with AFNetworking.
@@ -17,7 +17,7 @@ You must include <a href=https://github.com/AFNetworking/AFNetworking>AFNetworki
 Version Info:
 
 1.1.2
- - Fix implicit references to self inside blocks.
+ - Fix implicit strong references to self inside blocks.
 
 1.1.1
  - Add CC_LONG cast for 64 bit compatibility.
