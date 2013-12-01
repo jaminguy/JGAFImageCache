@@ -154,7 +154,7 @@
 - (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key retryCount:(NSInteger)retryCount completion:(void (^)(NSImage *image))completion {
 #endif
     NSURL *imageURL = [NSURL URLWithString:url];
-    NSString *baseURL = [NSString stringWithFormat:@"%@://%@", imageURL.scheme, imageURL.host];
+    NSString *baseURL = [NSString stringWithFormat:@"%@://%@:%@", imageURL.scheme, imageURL.host, imageURL.port];
     NSString *imagePath = [[self class] escapedPathForURL:imageURL];
     AFHTTPClient *httpClient = [self httpClientForBaseURL:baseURL];
     [httpClient
