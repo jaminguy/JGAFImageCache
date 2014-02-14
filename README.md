@@ -16,6 +16,9 @@ You must include <a href=https://github.com/AFNetworking/AFNetworking>AFNetworki
 <br>
 Version Info:
 
+1.1.3
+ - Added a progress block to the imageForURL method.
+
 1.1.2
  - Fix implicit strong references to self inside blocks.
 
