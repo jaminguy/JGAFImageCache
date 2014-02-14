@@ -28,7 +28,7 @@
 @property (assign, nonatomic) NSTimeInterval retryDelay;
 
 + (JGAFImageCache *)sharedInstance;
-- (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion;
+- (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion progressBlock:(void (^)(long long numberOfFinishedOperations, long long totalNumberOfOperations))progressBlock;
 - (void)clearAllData;
 
 @end
