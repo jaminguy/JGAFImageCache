@@ -9,8 +9,37 @@
 #import "JGAFImageCache.h"
 
 #import <UIKit/UIKit.h>
+#import <CommonCrypto/CommonDigest.h>
 
-#import "NSString+JGAFSHA1.h"
+#pragma mark - NSString (JGAFSHA1)
+
+@interface NSString (JGAFSHA1)
+
+- (NSString*)jgaf_sha1;
+
+@end
+
+@implementation NSString (JGAFSHA1)
+
+/* See here for more info: Getting MD5 and SHA-1 http://stackoverflow.com/a/6006747/648774 */
+
+- (NSString *)jgaf_sha1 {
+    NSMutableString *mutableSHA1 = nil;
+    NSData *data = [self dataUsingEncoding: NSUTF8StringEncoding]; /* A different encoding can be used here. */
+    uint8_t digest[CC_SHA1_DIGEST_LENGTH];
+    if(CC_SHA1(data.bytes, (CC_LONG)data.length, digest)) {
+        mutableSHA1 = [[NSMutableString alloc] initWithCapacity:CC_SHA1_DIGEST_LENGTH * 2];
+        for(int i = 0; i < CC_SHA1_DIGEST_LENGTH; i++) {
+            [mutableSHA1 appendFormat:@"%02x", digest[i]];
+        }
+    }
+    return mutableSHA1;
+}
+
+@end
+
+
+#pragma mark - JGAFImageCache
 
 @interface JGAFImageCache ()
 

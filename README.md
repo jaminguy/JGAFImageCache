@@ -1,4 +1,4 @@
-JGAFImageCache (v2.0.0)
+JGAFImageCache 2.0.1
 ==============
 
 A fast reliable image cache for iOS built with NSURLSession.
@@ -11,6 +11,9 @@ A fast reliable image cache for iOS built with NSURLSession.
 
 <br>
 Version Info:
+
+2.0.1
+ - Merge the JGAFSHA1 category into the main source file and remove NSString+JGAFSHA1 files.
 
 2.0.0
  - Remove dependency on AFNetworking in favor of NSURLSession.
