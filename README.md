@@ -1,7 +1,7 @@
-JGAFImageCache (v1.1.2)
+JGAFImageCache (v2.0.0)
 ==============
 
-A fast reliable image cache for iOS built with AFNetworking.
+A fast reliable image cache for iOS built with NSURLSession.
 
 1. Asynchronously loads from the fastest available source: NSCache, disk, or Internet.
 1. Creates SHA1 hash of urls to use as keys.
@@ -9,12 +9,10 @@ A fast reliable image cache for iOS built with AFNetworking.
 1. Automatically removes old images in the background.
 1. Stays out of your way.
 
-You must include <a href=https://github.com/AFNetworking/AFNetworking>AFNetworking</a> in your project.
-
-`$ git submodule add https://github.com/AFNetworking/AFNetworking.git`
-
 <br>
 Version Info:
+2.0.0
+ - Remove dependency on AFNetworking in favor of NSURLSession.
 
 1.1.2
  - Fix implicit strong references to self inside blocks.
