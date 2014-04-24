@@ -11,6 +11,7 @@ A fast reliable image cache for iOS built with NSURLSession.
 
 <br>
 Version Info:
+
 2.0.0
  - Remove dependency on AFNetworking in favor of NSURLSession.
 
