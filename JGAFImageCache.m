@@ -72,6 +72,10 @@
         _urlSession = urlSession;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        __weak JGAFImageCache *weakSelf = self;
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidReceiveMemoryWarningNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+            [weakSelf.imageCache removeAllObjects];
+        }];
     }
     return self;
 }
