@@ -206,7 +206,7 @@
                     }
                     
 #if JGAFImageCache_LOGGING_ENABLED
-                    NSLog(@"%s [Line %d] statusCode(%d) %@", __PRETTY_FUNCTION__, __LINE__, statusCode, error);
+                    NSLog(@"%s [Line %d] statusCode(%d) %@", __PRETTY_FUNCTION__, __LINE__, httpStatusCode, error);
 #endif
                 } break;
             }
