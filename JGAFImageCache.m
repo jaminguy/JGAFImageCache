@@ -147,7 +147,7 @@
 
 - (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key retryCount:(NSInteger)retryCount completion:(void (^)(UIImage *image))completion {
     if (url.length > 0) {
-        NSMutableURLRequest *urlRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
+        NSMutableURLRequest *urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]];
         __weak JGAFImageCache *weakSelf = self;
         NSURLSessionDataTask *task = [self.urlSession dataTaskWithRequest:urlRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
             NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
