@@ -1,4 +1,4 @@
-JGAFImageCache 2.0.2
+JGAFImageCache 2.1.0
 ==============
 
 A fast reliable image cache for iOS built with NSURLSession.
