@@ -7,11 +7,12 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @interface JGAFImageCache : NSObject
 
 #ifndef JGAFImageCache_LOGGING_ENABLED
-#define JGAFImageCache_LOGGING_ENABLED 0
+#define JGAFImageCache_LOGGING_ENABLED 1
 #endif
 
 // When the app enters the background extra time will be requested within which to
@@ -27,8 +28,8 @@
 // Default 0.0
 @property (assign, nonatomic) NSTimeInterval retryDelay;
 
-+ (JGAFImageCache *)sharedInstance;
-- (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion;
++ (nonnull JGAFImageCache *)sharedInstance;
+- (void)imageForURL:(nonnull NSString *)url completion:(void (^ __nullable)( UIImage * __nullable image))completion;
 - (void)clearAllData;
 
 @end
