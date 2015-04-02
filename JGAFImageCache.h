@@ -12,7 +12,7 @@
 @interface JGAFImageCache : NSObject
 
 #ifndef JGAFImageCache_LOGGING_ENABLED
-#define JGAFImageCache_LOGGING_ENABLED 1
+#define JGAFImageCache_LOGGING_ENABLED 0
 #endif
 
 // When the app enters the background extra time will be requested within which to
