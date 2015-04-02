@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @interface JGAFImageCache : NSObject
 
@@ -27,8 +28,8 @@
 // Default 0.0
 @property (assign, nonatomic) NSTimeInterval retryDelay;
 
-+ (JGAFImageCache *)sharedInstance;
-- (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion;
++ (nonnull JGAFImageCache *)sharedInstance;
+- (void)imageForURL:(nonnull NSString *)url completion:(void (^ __nullable)( UIImage * __nullable image))completion;
 - (void)clearAllData;
 
 @end

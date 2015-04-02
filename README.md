@@ -12,6 +12,11 @@ A fast reliable image cache for iOS built with NSURLSession.
 <br>
 Version Info:
 
+2.1.0
+ - Add nullability annotations.
+ - Add @synchronized around UIImage creation.
+ - Add check for error in the NSURLSession completion block.
+
 2.0.2
  - Fix compiler warning because of incorrect class type instantiation.
 
