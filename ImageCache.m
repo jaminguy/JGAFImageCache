@@ -1,12 +1,12 @@
 //
-//  JGAFImageCache.m
-//  JGAFImageCache
+//  ImageCache.m
+//  ImageCache
 //
-//  Created by Jamin Guy on 3/28/13.
-//  Copyright (c) 2013 Jamin Guy. All rights reserved.
+//  Created by Paresh Navadiya on 16/03/2016.
+//  Copyright (c) 2013 Paresh Navadiya. All rights reserved.
 //
 
-#import "JGAFImageCache.h"
+#import "ImageCache.h"
 
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
@@ -130,9 +130,9 @@ BLOCK(); \
 @end
 
 
-#pragma mark - JGAFImageCache
+#pragma mark - ImageCache
 
-@interface JGAFImageCache ()
+@interface ImageCache ()
 
 @property (strong, nonatomic) NSCache *imageCache;
 @property (strong, nonatomic) NSURLSession *urlSession;
@@ -140,9 +140,9 @@ BLOCK(); \
 
 @end
 
-@implementation JGAFImageCache
+@implementation ImageCache
 
-+ (JGAFImageCache *)sharedInstance {
++ (ImageCache *)sharedInstance {
     static id sharedID;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -154,7 +154,7 @@ BLOCK(); \
 - (id)init {
     self = [super init];
     if(self) {
-        _fileExpirationInterval = JGAFImageCache_DEFAULT_EXPIRATION_INTERVAL;
+        _fileExpirationInterval = ImageCache_DEFAULT_EXPIRATION_INTERVAL;
         _imageCache = [[NSCache alloc] init];
         _maxNumberOfRetries = 0;
         _retryDelay = 0.0;
@@ -167,7 +167,7 @@ BLOCK(); \
         _operationQueue = operationQueue;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-        __weak JGAFImageCache *weakSelf = self;
+        __weak ImageCache *weakSelf = self;
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidReceiveMemoryWarningNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
             [weakSelf.imageCache removeAllObjects];
         }];
@@ -186,7 +186,7 @@ BLOCK(); \
     }];
     
     if(backgroundTaskIdentifier != UIBackgroundTaskInvalid) {
-        __weak JGAFImageCache *weakSelf = self;
+        __weak ImageCache *weakSelf = self;
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
             NSDate *maxAge = [NSDate dateWithTimeIntervalSinceNow:weakSelf.fileExpirationInterval];
             [[self class] removeAllFilesOlderThanDate:maxAge];
@@ -197,7 +197,7 @@ BLOCK(); \
 
 - (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion {
     NSAssert(url.length > 0, @"url cannot be nil");
-    __weak JGAFImageCache *weakSelf = self;
+    __weak ImageCache *weakSelf = self;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSString *sha1 = [url jgaf_sha1];
         UIImage *image = [weakSelf.imageCache objectForKey:sha1];
@@ -251,7 +251,7 @@ BLOCK(); \
         }
     }
     @catch(NSException *exception) {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
     }
@@ -262,7 +262,7 @@ BLOCK(); \
     //NSLog(@"%@",url);
     if (url.length > 0) {
         NSURLRequest *urlRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
-        __weak JGAFImageCache *weakSelf = self;
+        __weak ImageCache *weakSelf = self;
         
         NSURLSessionOperation *imgDownloadOperation = [[NSURLSessionOperation alloc] initWithSession:weakSelf.urlSession request:urlRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
             
@@ -278,7 +278,7 @@ BLOCK(); \
                                     image = [[weakSelf class] imageWithData:data];
                                 }
                                 @catch(NSException *exception) {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                                     NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
                                 }
@@ -317,19 +317,19 @@ BLOCK(); \
                                 [self loadRemoteImageForURL:url key:key retryCount:nextRetryCount completion:completion];
                             });
                             
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                             NSLog(@"%s [Line %d] retrying(%d)", __PRETTY_FUNCTION__, __LINE__, (int)nextRetryCount);
 #endif
                         }
                         
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                         NSLog(@"%s [Line %d] statusCode(%d) %@", __PRETTY_FUNCTION__, __LINE__, (int)httpStatusCode, response);
 #endif
                     } break;
                 }
             }
             else {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                 NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
 #endif
             }
@@ -386,7 +386,7 @@ BLOCK(); \
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         NSArray *caches = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-        cacheDirectoryPath = [[[caches objectAtIndex:0] stringByAppendingPathComponent:@"JGAFImageCache"] copy];
+        cacheDirectoryPath = [[[caches objectAtIndex:0] stringByAppendingPathComponent:@"ImageCache"] copy];
         NSFileManager *fileManager = [self sharedFileManager];
         if([fileManager fileExistsAtPath:cacheDirectoryPath isDirectory:NULL] == NO) {
             [fileManager createDirectoryAtPath:cacheDirectoryPath withIntermediateDirectories:YES attributes:nil error:NULL];
@@ -419,7 +419,7 @@ BLOCK(); \
             }
         }
         @catch(NSException *exception) {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
             NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
         }
@@ -435,7 +435,7 @@ BLOCK(); \
         NSNumber *freeFileSystemSizeInBytes = [dictionary objectForKey:NSFileSystemFreeSize];
         totalFreeSpace = [freeFileSystemSizeInBytes unsignedLongLongValue];
     }
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
     else if(error) {
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
     }
@@ -457,7 +457,7 @@ BLOCK(); \
                 [fileManager removeItemAtPath:filepath error:&error];
             }
         }
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
         if(error != nil) {
             NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
         }
