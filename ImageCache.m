@@ -1,15 +1,106 @@
 //
-//  JGAFImageCache.m
-//  JGAFImageCache
+//  ImageCache.m
+//  ImageCache
 //
-//  Created by Jamin Guy on 3/28/13.
-//  Copyright (c) 2013 Jamin Guy. All rights reserved.
+//  Created by Paresh Navadiya on 16/03/2016.
+//  Copyright (c) 2013 Paresh Navadiya. All rights reserved.
 //
 
-#import "JGAFImageCache.h"
+#import "ImageCache.h"
 
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
+
+#pragma mark - NSOperation for NSURLSession
+
+@interface NSURLSessionOperation : NSOperation
+
+- (instancetype)initWithSession:(NSURLSession *)session URL:(NSURL *)url completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;
+- (instancetype)initWithSession:(NSURLSession *)session request:(NSURLRequest *)request completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;
+
+@property (nonatomic, strong, readonly) NSURLSessionDataTask *task;
+
+@end
+
+#define KVOBlock(KEYPATH, BLOCK) \
+[self willChangeValueForKey:KEYPATH]; \
+BLOCK(); \
+[self didChangeValueForKey:KEYPATH];
+
+@implementation NSURLSessionOperation {
+    BOOL _finished;
+    BOOL _executing;
+}
+
+- (instancetype)initWithSession:(NSURLSession *)session URL:(NSURL *)url completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
+    if (self = [super init]) {
+        __weak typeof(self) weakSelf = self;
+        _task = [session dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completionHandler(data, response, error);
+                [weakSelf completeOperation];
+
+            });
+        }];
+    }
+    return self;
+}
+
+- (instancetype)initWithSession:(NSURLSession *)session request:(NSURLRequest *)request completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
+    if (self = [super init]) {
+        __weak typeof(self) weakSelf = self;
+        _task = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completionHandler(data, response, error);
+                [weakSelf completeOperation];
+
+            });
+        }];
+    }
+    return self;
+}
+
+- (void)cancel {
+    [super cancel];
+    [self.task cancel];
+}
+
+- (void)start {
+    if (self.isCancelled) {
+        KVOBlock(@"isFinished", ^{ _finished = YES; });
+        return;
+    }
+    KVOBlock(@"isExecuting", ^{
+        [self.task resume];
+        _executing = YES;
+    });
+}
+
+- (BOOL)isExecuting {
+    return _executing;
+}
+
+- (BOOL)isFinished {
+    return _finished;
+}
+
+- (BOOL)isConcurrent {
+    return YES;
+}
+
+- (void)completeOperation {
+    [self willChangeValueForKey:@"isFinished"];
+    [self willChangeValueForKey:@"isExecuting"];
+    
+    _executing = NO;
+    _finished = YES;
+    
+    [self didChangeValueForKey:@"isExecuting"];
+    [self didChangeValueForKey:@"isFinished"];
+}
+
+@end
 
 #pragma mark - NSString (JGAFSHA1)
 
@@ -39,18 +130,19 @@
 @end
 
 
-#pragma mark - JGAFImageCache
+#pragma mark - ImageCache
 
-@interface JGAFImageCache ()
+@interface ImageCache ()
 
 @property (strong, nonatomic) NSCache *imageCache;
 @property (strong, nonatomic) NSURLSession *urlSession;
+@property (strong, nonatomic) NSOperationQueue *operationQueue;
 
 @end
 
-@implementation JGAFImageCache
+@implementation ImageCache
 
-+ (JGAFImageCache *)sharedInstance {
++ (ImageCache *)sharedInstance {
     static id sharedID;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -62,7 +154,7 @@
 - (id)init {
     self = [super init];
     if(self) {
-        _fileExpirationInterval = JGAFImageCache_DEFAULT_EXPIRATION_INTERVAL;
+        _fileExpirationInterval = ImageCache_DEFAULT_EXPIRATION_INTERVAL;
         _imageCache = [[NSCache alloc] init];
         _maxNumberOfRetries = 0;
         _retryDelay = 0.0;
@@ -71,8 +163,11 @@
         NSURLSession *urlSession = [NSURLSession sessionWithConfiguration:sessionConfiguration];
         _urlSession = urlSession;
         
+        NSOperationQueue *operationQueue = [[NSOperationQueue alloc] init];
+        _operationQueue = operationQueue;
+        
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-        __weak JGAFImageCache *weakSelf = self;
+        __weak ImageCache *weakSelf = self;
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidReceiveMemoryWarningNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
             [weakSelf.imageCache removeAllObjects];
         }];
@@ -91,7 +186,7 @@
     }];
     
     if(backgroundTaskIdentifier != UIBackgroundTaskInvalid) {
-        __weak JGAFImageCache *weakSelf = self;
+        __weak ImageCache *weakSelf = self;
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
             NSDate *maxAge = [NSDate dateWithTimeIntervalSinceNow:weakSelf.fileExpirationInterval];
             [[self class] removeAllFilesOlderThanDate:maxAge];
@@ -102,7 +197,7 @@
 
 - (void)imageForURL:(NSString *)url completion:(void (^)(UIImage *image))completion {
     NSAssert(url.length > 0, @"url cannot be nil");
-    __weak JGAFImageCache *weakSelf = self;
+    __weak ImageCache *weakSelf = self;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSString *sha1 = [url jgaf_sha1];
         UIImage *image = [weakSelf.imageCache objectForKey:sha1];
@@ -110,8 +205,28 @@
             image = [weakSelf imageFromDiskForKey:sha1];
         }
         
+
         if(image == nil) {
-            [weakSelf loadRemoteImageForURL:url key:sha1 retryCount:0 completion:completion];
+            
+            NSArray<NSURLSessionOperation *> *allCurOperations = self.operationQueue.operations.copy;
+            
+            NSURLSessionOperation *operationWithRequest = nil;
+            for (NSURLSessionOperation *operation in allCurOperations) {
+                
+                NSString *strRequestURL = [operation.task.originalRequest.URL absoluteString];
+                NSString *strCurRequestURL = [operation.task.currentRequest.URL absoluteString];
+                if ([strRequestURL isEqualToString:url] || [strCurRequestURL isEqualToString:url]) {
+                    operationWithRequest = operation;
+                    break;
+                }
+                
+            }
+            
+            if (!operationWithRequest)
+                [weakSelf loadRemoteImageForURL:url key:sha1 retryCount:0 completion:completion];
+            else
+                [operationWithRequest start];
+                
         }
         else if(completion) {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -136,7 +251,7 @@
         }
     }
     @catch(NSException *exception) {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
     }
@@ -144,10 +259,13 @@
 }
 
 - (void)loadRemoteImageForURL:(NSString *)url key:(NSString *)key retryCount:(NSInteger)retryCount completion:(void (^)(UIImage *image))completion {
+    //NSLog(@"%@",url);
     if (url.length > 0) {
         NSURLRequest *urlRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
-        __weak JGAFImageCache *weakSelf = self;
-        NSURLSessionDataTask *task = [self.urlSession dataTaskWithRequest:urlRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        __weak ImageCache *weakSelf = self;
+        
+        NSURLSessionOperation *imgDownloadOperation = [[NSURLSessionOperation alloc] initWithSession:weakSelf.urlSession request:urlRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            
             if (error == nil) {
                 NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
                 NSInteger httpStatusCode = httpResponse.statusCode;
@@ -160,7 +278,7 @@
                                     image = [[weakSelf class] imageWithData:data];
                                 }
                                 @catch(NSException *exception) {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                                     NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
                                 }
@@ -199,24 +317,27 @@
                                 [self loadRemoteImageForURL:url key:key retryCount:nextRetryCount completion:completion];
                             });
                             
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                             NSLog(@"%s [Line %d] retrying(%d)", __PRETTY_FUNCTION__, __LINE__, (int)nextRetryCount);
 #endif
                         }
                         
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                         NSLog(@"%s [Line %d] statusCode(%d) %@", __PRETTY_FUNCTION__, __LINE__, (int)httpStatusCode, response);
 #endif
                     } break;
                 }
             }
             else {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
                 NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
 #endif
             }
+
         }];
-        [task resume];
+        //firstly add operations
+        [self.operationQueue addOperation:imgDownloadOperation];
+        [imgDownloadOperation start];
     }
     else if(completion) {
         completion(nil);
@@ -265,7 +386,7 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         NSArray *caches = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-        cacheDirectoryPath = [[[caches objectAtIndex:0] stringByAppendingPathComponent:@"JGAFImageCache"] copy];
+        cacheDirectoryPath = [[[caches objectAtIndex:0] stringByAppendingPathComponent:@"ImageCache"] copy];
         NSFileManager *fileManager = [self sharedFileManager];
         if([fileManager fileExistsAtPath:cacheDirectoryPath isDirectory:NULL] == NO) {
             [fileManager createDirectoryAtPath:cacheDirectoryPath withIntermediateDirectories:YES attributes:nil error:NULL];
@@ -298,7 +419,7 @@
             }
         }
         @catch(NSException *exception) {
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
             NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, exception);
 #endif
         }
@@ -314,7 +435,7 @@
         NSNumber *freeFileSystemSizeInBytes = [dictionary objectForKey:NSFileSystemFreeSize];
         totalFreeSpace = [freeFileSystemSizeInBytes unsignedLongLongValue];
     }
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
     else if(error) {
         NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
     }
@@ -336,7 +457,7 @@
                 [fileManager removeItemAtPath:filepath error:&error];
             }
         }
-#if JGAFImageCache_LOGGING_ENABLED
+#if ImageCache_LOGGING_ENABLED
         if(error != nil) {
             NSLog(@"%s [Line %d] %@", __PRETTY_FUNCTION__, __LINE__, error);
         }
